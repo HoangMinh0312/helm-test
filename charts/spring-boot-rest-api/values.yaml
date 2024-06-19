@@ -1,0 +1,121 @@
+# -------------------------------------------------------
+# For deployment
+image:
+  repository: timpamungkas/devops-yellow
+  tag: 1.0.0
+
+applicationPort: 8112
+
+actuatorPort: 8112
+
+prometheusPath: /devops/yellow/actuator/prometheus
+
+health:
+  actuatorPort: 8112
+  liveness:
+    port: 8112
+    path: /devops/yellow/api/hello
+  readiness:
+    port: 8112
+    path: /devops/yellow/api/hello
+
+# Mind the | which indicates this is raw string
+extraVolumeMounts: |
+  - name: upload-image-empty-dir
+    mountPath: /upload/image
+  - name: upload-doc-empty-dir
+    mountPath: /upload/doc
+
+# Mind the | which indicates this is raw string
+extraVolumes: |
+  - name: upload-image-empty-dir
+    emptyDir: {}
+  - name: upload-doc-empty-dir
+    emptyDir: {}
+
+# -------------------------------------------------------
+# For service
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8112
+
+# -------------------------------------------------------
+# For autoscaling
+autoscaling:
+  enabled: "true"
+  minReplicas: 2
+  maxReplicas: 4
+
+# -------------------------------------------------------
+# For ingress
+ingress:
+  enabled: "true"
+  ingressClassName: nginx
+  annotations: 
+    nginx.ingress.kubernetes.io/limit-rpm: "30"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "1"
+  hosts:
+  - host: api.devops.local
+    paths:
+    - path: /devops/yellow
+      pathType: Prefix
+
+serviceAccount:
+  create: "false"      
+replicaCount: 1
+size: "small"
+
+sizemap:
+  small:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 384Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    java-options: >-
+      -XX:+UseContainerSupport
+      -XX:MaxRAMPercentage=75.0
+      -Djava.net.preferIPv4Stack=true
+      -Djava.awt.headless=true
+  medium:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 750m
+        memory: 768Mi
+    java-options: >-
+      -XX:+UseContainerSupport
+      -XX:MaxRAMPercentage=80.0
+      -Djava.net.preferIPv4Stack=true
+      -Djava.awt.headless=true
+  large:
+    resources:
+      requests:
+        cpu: 750m
+        memory: 768Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    java-options: >-
+      -XX:+UseContainerSupport
+      -XX:MaxRAMPercentage=85.0
+      -Djava.net.preferIPv4Stack=true
+      -Djava.awt.headless=true
+  xlarge:
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+    java-options: >-
+      -XX:+UseContainerSupport
+      -XX:MaxRAMPercentage=90.0
+      -Djava.net.preferIPv4Stack=true
+      -Djava.awt.headless=true
